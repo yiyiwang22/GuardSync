@@ -1,5 +1,5 @@
 # Step 1
-git clone https://github.com/YourUsername/GuardSync.git
+```git clone https://github.com/YourUsername/GuardSync.git```
 # Step 2
 In your project root directory running: ```flutter pub get```
 
