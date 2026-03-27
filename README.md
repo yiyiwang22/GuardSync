@@ -4,6 +4,8 @@
 In your project root directory running: ```flutter pub get```
 
 Also, it would be better to check whether everything is ready using: ```flutter doctor```
+# Step 3 
+Click run on your device or simulator.
 
 
 
