@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-// Model for Role data
 class RoleModel {
   final String id;
   final String label;
@@ -9,7 +8,7 @@ class RoleModel {
   final Color color;
   final Color bgColor;
 
-  RoleModel({
+  const RoleModel({
     required this.id,
     required this.label,
     required this.description,
@@ -26,54 +25,61 @@ class RoleSelectionPage extends StatefulWidget {
   State<RoleSelectionPage> createState() => _RoleSelectionPageState();
 }
 
-class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProviderStateMixin {
-  // State for selected role
+class _RoleSelectionPageState extends State<RoleSelectionPage>
+    with TickerProviderStateMixin {
   String? _selectedId;
 
-  // Animation controllers
   late AnimationController _headerController;
   late AnimationController _listController;
   late List<AnimationController> _cardControllers;
 
-  final List<RoleModel> _roles = [
+  final List<RoleModel> _roles = const [
     RoleModel(
       id: 'athlete',
       label: 'Athlete',
       description: 'Track your own performance and health metrics in real-time.',
-      icon: Icons.fitness_center_rounded, // Equivalent to Dumbbell
-      color: const Color(0xFF1A5C4C),
-      bgColor: const Color(0xFFD6ECE6),
+      icon: Icons.fitness_center_rounded,
+      color: Color(0xFF1A5C4C),
+      bgColor: Color(0xFFD6ECE6),
     ),
     RoleModel(
       id: 'parent',
       label: 'Parent / Guardian',
       description: "Monitor your child's safety and health data remotely.",
-      icon: Icons.people_alt_rounded, // Equivalent to Users
-      color: const Color(0xFF5C4C1A),
-      bgColor: const Color(0xFFECE6D6),
+      icon: Icons.people_alt_rounded,
+      color: Color(0xFF5C4C1A),
+      bgColor: Color(0xFFECE6D6),
     ),
     RoleModel(
       id: 'trainer',
       label: 'Trainer / Coach',
       description: "Oversee your team's stats, manage athletes, and review risks.",
-      icon: Icons.school_rounded, // Equivalent to GraduationCap
-      color: const Color(0xFF4C1A5C),
-      bgColor: const Color(0xFFE6D6EC),
+      icon: Icons.school_rounded,
+      color: Color(0xFF4C1A5C),
+      bgColor: Color(0xFFE6D6EC),
     ),
   ];
 
   @override
   void initState() {
     super.initState();
-    
-    // Header animation
-    _headerController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
-    _listController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
 
-    // Staggered controllers for each card to mimic motion.button delay
+    _headerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
+    _listController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    );
+
     _cardControllers = List.generate(
       _roles.length,
-      (index) => AnimationController(vsync: this, duration: const Duration(milliseconds: 500)),
+          (_) => AnimationController(
+        vsync: this,
+        duration: const Duration(milliseconds: 500),
+      ),
     );
 
     _startAnimations();
@@ -83,10 +89,9 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
     _headerController.forward();
     await Future.delayed(const Duration(milliseconds: 50));
     _listController.forward();
-    
-    // Trigger staggered card entry
+
     for (var i = 0; i < _cardControllers.length; i++) {
-      await Future.delayed(Duration(milliseconds: (100 + (i * 80)).toInt()));
+      await Future.delayed(Duration(milliseconds: 100 + (i * 80)));
       _cardControllers[i].forward();
     }
   }
@@ -95,8 +100,8 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
   void dispose() {
     _headerController.dispose();
     _listController.dispose();
-    for (var c in _cardControllers) {
-      c.dispose();
+    for (final controller in _cardControllers) {
+      controller.dispose();
     }
     super.dispose();
   }
@@ -104,13 +109,20 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
   void _handleContinue() {
     if (_selectedId == null) return;
 
-    // Navigation logic matching React's router
-    if (_selectedId == 'athlete') {
-      Navigator.pushNamed(context, '/profile', arguments: {'role': _selectedId});
-    } else if (_selectedId == 'parent') {
-      Navigator.pushNamed(context, '/parent-profile');
-    } else if (_selectedId == 'trainer') {
-      Navigator.pushNamed(context, '/trainer-profile');
+    switch (_selectedId) {
+      case 'athlete':
+        Navigator.pushNamed(
+          context,
+          '/profile',
+          arguments: {'role': _selectedId},
+        );
+        break;
+      case 'parent':
+        Navigator.pushNamed(context, '/parent-profile');
+        break;
+      case 'trainer':
+        Navigator.pushNamed(context, '/trainer-profile');
+        break;
     }
   }
 
@@ -126,11 +138,13 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // --- Header / Back Button ---
               FadeTransition(
                 opacity: _headerController,
                 child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, -0.1), end: Offset.zero).animate(_headerController),
+                  position: Tween<Offset>(
+                    begin: const Offset(0, -0.1),
+                    end: Offset.zero,
+                  ).animate(_headerController),
                   child: Padding(
                     padding: const EdgeInsets.only(top: 20, bottom: 8),
                     child: GestureDetector(
@@ -138,27 +152,47 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
                       child: Container(
                         width: 36,
                         height: 36,
-                        decoration: const BoxDecoration(color: Color(0xFFD4D2C5), shape: BoxShape.circle),
-                        child: const Icon(Icons.arrow_back_rounded, size: 18, color: Color(0xFF555555)),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFD4D2C5),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.arrow_back_rounded,
+                          size: 18,
+                          color: Color(0xFF555555),
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
 
-              // --- Title Section ---
               FadeTransition(
                 opacity: _listController,
                 child: SlideTransition(
-                  position: Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(_listController),
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.1),
+                    end: Offset.zero,
+                  ).animate(_listController),
                   child: const Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Choose Your Role', 
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1A1A1A))),
+                      Text(
+                        'Choose Your Role',
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1A1A1A),
+                        ),
+                      ),
                       SizedBox(height: 4),
-                      Text("Select how you'll be using GuardSync. You can change this later.",
-                        style: TextStyle(fontSize: 14, color: Color(0xFF777777))),
+                      Text(
+                        "Select how you'll be using GuardSync. You can change this later.",
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Color(0xFF777777),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -166,7 +200,6 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
 
               const SizedBox(height: 24),
 
-              // --- Role Cards ---
               Expanded(
                 child: ListView.separated(
                   physics: const NeverScrollableScrollPhysics(),
@@ -179,7 +212,10 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
                     return FadeTransition(
                       opacity: _cardControllers[index],
                       child: SlideTransition(
-                        position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(_cardControllers[index]),
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.2),
+                          end: Offset.zero,
+                        ).animate(_cardControllers[index]),
                         child: GestureDetector(
                           onTap: () => setState(() => _selectedId = role.id),
                           child: AnimatedContainer(
@@ -192,35 +228,60 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
                                 color: isSelected ? primaryGreen : Colors.transparent,
                                 width: 2,
                               ),
-                              boxShadow: isSelected 
-                                ? [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4))] 
-                                : [],
+                              boxShadow: isSelected
+                                  ? [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
+                                  : [],
                             ),
                             child: Row(
                               children: [
-                                // Icon Container
                                 Container(
                                   width: 56,
                                   height: 56,
-                                  decoration: BoxDecoration(color: role.bgColor, borderRadius: BorderRadius.circular(16)),
-                                  child: Icon(role.icon, size: 26, color: role.color),
+                                  decoration: BoxDecoration(
+                                    color: role.bgColor,
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Icon(
+                                    role.icon,
+                                    size: 26,
+                                    color: role.color,
+                                  ),
                                 ),
                                 const SizedBox(width: 16),
-                                // Text Info
                                 Expanded(
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Text(role.label, style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1A1A1A))),
+                                      Text(
+                                        role.label,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                          color: Color(0xFF1A1A1A),
+                                        ),
+                                      ),
                                       const SizedBox(height: 2),
-                                      Text(role.description, style: const TextStyle(fontSize: 12, color: Color(0xFF888888), height: 1.4)),
+                                      Text(
+                                        role.description,
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF888888),
+                                          height: 1.4,
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                                // Chevron
                                 Icon(
                                   Icons.chevron_right_rounded,
-                                  color: isSelected ? primaryGreen : const Color(0xFFCCCCCC),
+                                  color: isSelected
+                                      ? primaryGreen
+                                      : const Color(0xFFCCCCCC),
                                   size: 20,
                                 ),
                               ],
@@ -233,7 +294,6 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
                 ),
               ),
 
-              // --- Continue Button ---
               Padding(
                 padding: const EdgeInsets.only(bottom: 40, top: 16),
                 child: SizedBox(
@@ -241,15 +301,22 @@ class _RoleSelectionPageState extends State<RoleSelectionPage> with TickerProvid
                   child: ElevatedButton(
                     onPressed: _selectedId != null ? _handleContinue : null,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: _selectedId != null ? primaryGreen : const Color(0xFFC5C3B8),
+                      backgroundColor: _selectedId != null
+                          ? primaryGreen
+                          : const Color(0xFFC5C3B8),
                       foregroundColor: Colors.white,
                       disabledBackgroundColor: const Color(0xFFC5C3B8),
                       disabledForegroundColor: const Color(0xFF999999),
                       padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 0,
                     ),
-                    child: const Text('Continue', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                    child: const Text(
+                      'Continue',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
                   ),
                 ),
               ),
