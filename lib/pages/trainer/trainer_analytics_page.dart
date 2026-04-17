@@ -149,13 +149,16 @@ class _TrainerAnalyticsPageState extends State<TrainerAnalyticsPage> {
       children: [
         GestureDetector(
           onTap: () {
-            final currentRouteName = ModalRoute.of(context)?.settings.name;
+            // final currentRouteName = ModalRoute.of(context)?.settings.name;
 
-            if (currentRouteName == '/parent-analytics') {
-              Navigator.pushReplacementNamed(context, '/parent-dashboard');
-            } else {
-              Navigator.pushReplacementNamed(context, '/trainer-dashboard');
-            }
+            // if (currentRouteName == '/parent-analytics') {
+            //   Navigator.pushReplacementNamed(context, '/parent-dashboard');
+            // } else if (currentRouteName == '/trainer-dashboard'){
+            //   Navigator.pushReplacementNamed(context, '/trainer-dashboard');
+            // } else if (currentRouteName == '/dashboard_page'){
+            //   Navigator.pushReplacementNamed(context, '/dashboard_page');
+            // }
+            Navigator.pop(context);
           },
           child: Container(
             width: 54,
