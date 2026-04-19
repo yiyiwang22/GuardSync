@@ -9,7 +9,7 @@ import 'pages/calibration_flow_page.dart';
 import 'pages/trainer/trainer_dashboard.dart';
 import 'pages/trainer/trainer_profile_page.dart';
 import 'pages/trainer/add_athletes_page.dart';
-import 'pages/trainer/trainer_analytics_page.dart';
+import 'pages/trainer_analytics_page.dart';
 import 'pages/parent/parent_profile_page.dart';
 import 'pages/parent/link_to_athlete_page.dart';
 import 'pages/parent/parent_dashboard_page.dart';

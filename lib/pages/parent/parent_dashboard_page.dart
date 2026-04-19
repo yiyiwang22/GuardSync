@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import '../services/athlete_data_service.dart';
-
+import '../../services/athlete_data_service.dart';
 import '../dashboard_page.dart'; 
 
 class ParentDashboardPage extends StatefulWidget {
@@ -18,6 +17,7 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
   @override
   void initState() {
     super.initState();
+    // Listen to the data stream and rebuild UI on updates
     _sub = _service.dataStream.listen((_) {
       if (mounted) setState(() {});
     });
@@ -25,10 +25,12 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
 
   @override
   void dispose() {
+    // Cancel subscription to prevent memory leaks
     _sub?.cancel();
     super.dispose();
   }
 
+  // --- Shared Color Logic ---
   Color getHeartRateColor(int hr) {
     if (hr >= 190) return const Color(0xFFE63946);
     if (hr >= 165) return const Color(0xFFF77F00);
@@ -57,6 +59,7 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
     return const Color(0xFF1A5C4C);
   }
 
+  // --- Detailed Info Dialog ---
   void _showInfoDialog(String metricKey) {
     final info = metricInfo[metricKey]!;
     showDialog(
@@ -132,7 +135,16 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
   @override
   Widget build(BuildContext context) {
     const bgColor = Color(0xFFF5F5F0);
-    const primaryGreen = Color(0xFF166B57); // 家长端原本的深绿色
+    const primaryGreen = Color(0xFF166B57); // Original dark green for parent
+
+    // Extract current metrics from the service with fallback values (0) before first Bluetooth tick
+    final metrics = _service.currentMetrics;
+    final int currentHeartRate = metrics?.heartRate ?? 0;
+    final int currentSpO2 = metrics?.spO2 ?? 0;
+    final double currentBodyTemp = metrics?.bodyTemp ?? 0.0;
+    final int currentBiteForce = metrics?.biteForce ?? 0;
+    final int currentHeadAccel = metrics?.headAccel ?? 0;
+    final String currentRisk = metrics?.concussionRisk ?? 'Low';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -142,6 +154,7 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Header
               Row(children: [
                 Container(width: 58, height: 58, decoration: const BoxDecoration(color: Color(0xFFD9D4C8), shape: BoxShape.circle), child: const Icon(Icons.person_outline, color: Color(0xFF5B5B5B))),
                 const SizedBox(width: 14),
@@ -151,6 +164,7 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
 
               const SizedBox(height: 22),
 
+              // Athlete Profile
               Container(
                 width: double.infinity, padding: const EdgeInsets.all(22),
                 decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(24)),
@@ -171,15 +185,16 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
 
               const SizedBox(height: 22),
 
+              // Concussion Banner
               Container(
                 width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
                 decoration: BoxDecoration(color: const Color(0xFFE7EDE8), borderRadius: BorderRadius.circular(26)),
                 child: Column(children: [
-                  CircleAvatar(radius: 54, backgroundColor: const Color(0xFFD2DED7), child: Icon(Icons.warning_amber_rounded, size: 52, color: _service.concussionRisk == 'High' ? const Color(0xFFE63946) : primaryGreen)),
+                  CircleAvatar(radius: 54, backgroundColor: const Color(0xFFD2DED7), child: Icon(Icons.warning_amber_rounded, size: 52, color: currentRisk == 'High' ? const Color(0xFFE63946) : primaryGreen)),
                   const SizedBox(height: 18),
                   const Text('CONCUSSION RISK', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, letterSpacing: 0.6, color: Color(0xFF555555))),
                   const SizedBox(height: 10),
-                  Text(_service.concussionRisk == 'High' ? 'High Risk' : 'Low Risk', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: _service.concussionRisk == 'High' ? const Color(0xFFE63946) : primaryGreen)),
+                  Text(currentRisk == 'High' ? 'High Risk' : 'Low Risk', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: currentRisk == 'High' ? const Color(0xFFE63946) : primaryGreen)),
                   const SizedBox(height: 6),
                   const Text('Real-time monitoring active', style: TextStyle(fontSize: 14, color: Color(0xFF757575), fontWeight: FontWeight.w500)),
                 ]),
@@ -187,7 +202,7 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
 
               const SizedBox(height: 22),
 
-          
+              // Metric Grid
               GridView.count(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -198,18 +213,18 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
                 children: [
                   _buildMirroredCard('Sport', _service.sport, Icons.directions_run, const Color(0xFF1A5C4C), null),
                   _buildMirroredCard('Active Minutes', _service.activeMinutes, Icons.hourglass_empty, const Color(0xFF1A5C4C), null),
-                  _buildMirroredCard('Head Acceleration', '${_service.headAccel}g', Icons.sports_motorsports, const Color(0xFF1A5C4C), null),
-                  _buildMirroredCard('Concussion Risk', _service.concussionRisk, Icons.warning_amber_rounded, _service.concussionRisk == 'High' ? const Color(0xFFE63946) : const Color(0xFF1A5C4C), null),
-                  _buildMirroredCard('Heart Rate', '${_service.heartRate} BPM', Icons.favorite, getHeartRateColor(_service.heartRate), 'heartRate'),
-                  _buildMirroredCard('SpO2', '${_service.spO2}%', O2Icon(color: getSpO2Color(_service.spO2)), getSpO2Color(_service.spO2), 'spO2'),
-                  _buildMirroredCard('Body Temperature', '${_service.bodyTemp} °F', Icons.thermostat, getTempColor(_service.bodyTemp), 'bodyTemp'),
-                  _buildMirroredCard('Bite Force', '${_service.biteForce} N', ToothIcon(color: getBiteForceColor(_service.biteForce)), getBiteForceColor(_service.biteForce), 'biteForce'),
+                  _buildMirroredCard('Head Acceleration', '${currentHeadAccel}g', Icons.sports_motorsports, const Color(0xFF1A5C4C), null),
+                  _buildMirroredCard('Concussion Risk', currentRisk, Icons.warning_amber_rounded, currentRisk == 'High' ? const Color(0xFFE63946) : const Color(0xFF1A5C4C), null),
+                  _buildMirroredCard('Heart Rate', '$currentHeartRate BPM', Icons.favorite, getHeartRateColor(currentHeartRate), 'heartRate'),
+                  _buildMirroredCard('SpO2', '$currentSpO2%', O2Icon(color: getSpO2Color(currentSpO2)), getSpO2Color(currentSpO2), 'spO2'),
+                  _buildMirroredCard('Body Temperature', '$currentBodyTemp °F', Icons.thermostat, getTempColor(currentBodyTemp), 'bodyTemp'),
+                  _buildMirroredCard('Bite Force', '$currentBiteForce N', ToothIcon(color: getBiteForceColor(currentBiteForce)), getBiteForceColor(currentBiteForce), 'biteForce'),
                 ],
               ),
 
               const SizedBox(height: 18),
 
-             
+              // Device Status
               Container(
                 width: double.infinity, padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), borderRadius: BorderRadius.circular(24)),
@@ -229,7 +244,7 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
 
               const SizedBox(height: 18),
 
-
+              // Disclaimer
               Container(
                 width: double.infinity, padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
                 decoration: BoxDecoration(color: Colors.white.withOpacity(0.65), borderRadius: BorderRadius.circular(20), border: Border.all(color: const Color(0xFFD0CCC2))),
@@ -239,7 +254,8 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
           ),
         ),
       ),
-     
+      
+      // Bottom Navigation
       bottomNavigationBar: SafeArea(
         top: false,
         child: Container(
@@ -255,7 +271,7 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
     );
   }
 
-
+  // Mirrored Metric Card builder
   Widget _buildMirroredCard(String label, String value, dynamic icon, Color valueColor, String? infoKey) {
     return Container(
       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8, offset: const Offset(0, 2))]),
@@ -282,10 +298,11 @@ class _ParentDashboardPageState extends State<ParentDashboardPage> {
   }
 }
 
-
+// Bottom Navigation Button Widget
 class _BottomNavButton extends StatelessWidget {
   final String label; final IconData icon; final bool isSelected; final VoidCallback onTap;
   const _BottomNavButton({required this.label, required this.icon, required this.isSelected, required this.onTap});
+  
   @override
   Widget build(BuildContext context) {
     return GestureDetector(

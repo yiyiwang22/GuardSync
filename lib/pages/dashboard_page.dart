@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'services/athlete_data_service.dart';
+import '../services/athlete_data_service.dart';
+import '../model/athlete_metrics.dart'; // Ensure this import is correct
 
-// --- STICKING TO YOUR ORIGINAL metricInfo ---
+// --- Info dictionary kept intact ---
 const Map<String, Map<String, String>> metricInfo = {
   'heartRate': { 'title': 'Heart Rate', 'measures': 'Heart beats per minute.', 'colorMeans': 'Green indicates safe activity.\nYellow indicates moderate exertion.\nOrange indicates high exertion.\nRed indicates dangerous or abnormal.', 'acceptableRanges': 'Green < 150, Yellow 150-165, Orange 165-190, Red > 190.', 'standard': 'Uses the standard 5-zone exercise intensity model.' },
   'spO2': { 'title': 'Blood Oxygen', 'measures': 'Percentage of oxygen saturation in blood.', 'colorMeans': 'Green indicates normal oxygen levels.\nYellow indicates mild oxygen desaturation.\nOrange indicates moderate desaturation.\nRed indicates critically low levels.', 'acceptableRanges': 'Green 95-100%, Yellow 93-94%, Orange 92%, Red < 92%.', 'standard': 'Uses clinical oxygen saturation standards.' },
@@ -23,8 +24,10 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   void initState() {
     super.initState();
-    // Listen to global service updates
-    _sub = _service.dataStream.listen((_) { if (mounted) setState(() {}); });
+    // Listen to data stream from Service
+    _sub = _service.dataStream.listen((_) { 
+      if (mounted) setState(() {}); 
+    });
   }
 
   @override
@@ -33,7 +36,7 @@ class _DashboardPageState extends State<DashboardPage> {
     super.dispose();
   }
 
-  // --- STICKING TO YOUR ORIGINAL COLOR FUNCTIONS ---
+  // --- Shared Color Functions ---
   Color getHeartRateColor(int hr) {
     if (hr >= 190) return const Color(0xFFE63946);
     if (hr >= 165) return const Color(0xFFF77F00);
@@ -59,7 +62,7 @@ class _DashboardPageState extends State<DashboardPage> {
     return const Color(0xFF1A5C4C);
   }
 
-  // --- STICKING TO YOUR ORIGINAL INFO DIALOG ---
+  // --- Original Modal logic ---
   void _showInfoDialog(String metricKey) {
     final info = metricInfo[metricKey]!;
     showDialog(context: context, builder: (context) {
@@ -98,6 +101,17 @@ class _DashboardPageState extends State<DashboardPage> {
 
   @override
   Widget build(BuildContext context) {
+    // 1. Get metrics object from Service
+    final metrics = _service.currentMetrics;
+
+    // 2. Safely extract values or use defaults to prevent UI errors
+    final int hr = metrics?.heartRate ?? 0;
+    final int spo2 = metrics?.spO2 ?? 0;
+    final double temp = metrics?.bodyTemp ?? 0.0;
+    final int bite = metrics?.biteForce ?? 0;
+    final int accel = metrics?.headAccel ?? 0;
+    final String risk = metrics?.concussionRisk ?? 'Low';
+
     return Scaffold(
       body: SafeArea(
         child: Column(children: [
@@ -131,24 +145,24 @@ class _DashboardPageState extends State<DashboardPage> {
             ]),
           ),
           const SizedBox(height: 16),
-          // Grid View
+          
+          // --- FIXED GRID: Values extracted from local variables above ---
           Expanded(child: GridView.count(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             crossAxisCount: 2, crossAxisSpacing: 12, mainAxisSpacing: 12, childAspectRatio: 1.1,
             children: [
               _buildMetricCard('Sport', _service.sport, Icons.directions_run, const Color(0xFF1A5C4C), null),
               _buildMetricCard('Active Minutes', _service.activeMinutes, Icons.hourglass_empty, const Color(0xFF1A5C4C), null),
-              _buildMetricCard('Head Acceleration', '${_service.headAccel}g', Icons.sports_motorsports, const Color(0xFF1A5C4C), null),
-              _buildMetricCard('Concussion Risk', _service.concussionRisk, Icons.warning_amber_rounded, _service.concussionRisk == 'High' ? const Color(0xFFE63946) : const Color(0xFF1A5C4C), null),
-              _buildMetricCard('Heart Rate', '${_service.heartRate} BPM', Icons.favorite, getHeartRateColor(_service.heartRate), 'heartRate'),
-              _buildMetricCard('SpO2', '${_service.spO2}%', O2Icon(color: getSpO2Color(_service.spO2)), getSpO2Color(_service.spO2), 'spO2'),
-              _buildMetricCard('Body Temperature', '${_service.bodyTemp} °F', Icons.thermostat, getTempColor(_service.bodyTemp), 'bodyTemp'),
-              _buildMetricCard('Bite Force', '${_service.biteForce} N', ToothIcon(color: getBiteForceColor(_service.biteForce)), getBiteForceColor(_service.biteForce), 'biteForce'),
+              _buildMetricCard('Head Acceleration', '${accel}g', Icons.sports_motorsports, const Color(0xFF1A5C4C), null),
+              _buildMetricCard('Concussion Risk', risk, Icons.warning_amber_rounded, risk == 'High' ? const Color(0xFFE63946) : const Color(0xFF1A5C4C), null),
+              _buildMetricCard('Heart Rate', '$hr BPM', Icons.favorite, getHeartRateColor(hr), 'heartRate'),
+              _buildMetricCard('SpO2', '$spo2%', O2Icon(color: getSpO2Color(spo2)), getSpO2Color(spo2), 'spO2'),
+              _buildMetricCard('Body Temperature', '$temp °F', Icons.thermostat, getTempColor(temp), 'bodyTemp'),
+              _buildMetricCard('Bite Force', '$bite N', ToothIcon(color: getBiteForceColor(bite)), getBiteForceColor(bite), 'biteForce'),
             ],
           )),
         ]),
       ),
-      // Original Bottom Nav
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(color: Colors.white, border: Border(top: BorderSide(color: Color(0xFFDDDDDD)))),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -178,22 +192,18 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-// --- ORIGINAL CUSTOM ICONS ---
+// --- Icons and Painters stay identical ---
 class O2Icon extends StatelessWidget {
   final Color color;
   const O2Icon({super.key, required this.color});
   @override
-  Widget build(BuildContext context) {
-    return RichText(text: TextSpan(text: 'O', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color, height: 1.1), children: [WidgetSpan(child: Transform.translate(offset: const Offset(1, 6), child: Text('2', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color))))]));
-  }
+  Widget build(BuildContext context) { return RichText(text: TextSpan(text: 'O', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: color, height: 1.1), children: [WidgetSpan(child: Transform.translate(offset: const Offset(1, 6), child: Text('2', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color))))])); }
 }
 class ToothIcon extends StatelessWidget {
   final Color color;
   const ToothIcon({super.key, required this.color});
   @override
-  Widget build(BuildContext context) {
-    return CustomPaint(size: const Size(28, 32), painter: _ToothPainter(color: color));
-  }
+  Widget build(BuildContext context) { return CustomPaint(size: const Size(28, 32), painter: _ToothPainter(color: color)); }
 }
 class _ToothPainter extends CustomPainter {
   final Color color; _ToothPainter({required this.color});
