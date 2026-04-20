@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '/model/analytics_models.dart';
-import '/services/analytics_data_service.dart';
+import '../model/analytics_models.dart';
+import '../services/analytics_data_service.dart';
 
 class TrainerAnalyticsPage extends StatefulWidget {
   const TrainerAnalyticsPage({super.key});
@@ -11,134 +11,147 @@ class TrainerAnalyticsPage extends StatefulWidget {
 }
 
 class _TrainerAnalyticsPageState extends State<TrainerAnalyticsPage> {
-  // Initialize the data service
   final AnalyticsDataService _dataService = AnalyticsDataService();
   String _selectedRange = '30min';
 
   @override
   Widget build(BuildContext context) {
-    // Fetch data bundle and alert count directly from the Service
-    final bundle = _dataService.getBundleForRange(_selectedRange);
-    final currentAlertCount = _dataService.getAlertCountForRange(_selectedRange);
-
     return Scaffold(
       backgroundColor: const Color(0xFFF5F5F0),
       body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 140),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(currentAlertCount),
-                    const SizedBox(height: 24),
-                    _buildRangeTabs(),
-                    const SizedBox(height: 24),
+        // FutureBuilder manages the async connection to Firebase
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: _dataService.getAnalyticsData(_selectedRange),
+          builder: (context, snapshot) {
+            // 1. Loading state
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF166B57)),
+              );
+            }
+            
+            // 2. Error state
+            if (snapshot.hasError) {
+              return Center(child: Text("Cloud Error: ${snapshot.error}"));
+            }
 
-                    // --- Analytics Cards using data from 'bundle' ---
-                    AnalyticsChartCard(
-                      title: 'Heart Rate',
-                      subtitle: 'Avg: ${bundle.heartRateSummary.avg} BPM • Min: ${bundle.heartRateSummary.min} • Max: ${bundle.heartRateSummary.max}',
-                      points: bundle.heartRate,
-                      yMin: bundle.heartRateSummary.yMin,
-                      yMax: bundle.heartRateSummary.yMax,
-                      threshold: bundle.heartRateSummary.threshold,
-                      normalColor: const Color(0xFF166B57),
-                      warningColor: const Color(0xFFEF4444),
-                      yLabels: bundle.heartRateSummary.yLabels,
-                      iconBg: const Color(0xFFE5ECE8),
-                      iconColor: const Color(0xFF166B57),
-                      tooltipLabelBuilder: (point) => '${point.label}\nHeart Rate : ${point.value.toStringAsFixed(0)} BPM',
+            // 3. Success state
+            final bundle = snapshot.data!['bundle'] as AnalyticsBundle;
+            final currentAlertCount = snapshot.data!['alertCount'] as int;
+
+            return Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 140),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(currentAlertCount),
+                        const SizedBox(height: 24),
+                        _buildRangeTabs(),
+                        const SizedBox(height: 24),
+
+                        // --- Heart Rate ---
+                        AnalyticsChartCard(
+                          title: 'Heart Rate',
+                          subtitle: 'Avg: ${bundle.heartRateSummary.avg} BPM • Min: ${bundle.heartRateSummary.min} • Max: ${bundle.heartRateSummary.max}',
+                          points: bundle.heartRate,
+                          yMin: bundle.heartRateSummary.yMin,
+                          yMax: bundle.heartRateSummary.yMax,
+                          threshold: bundle.heartRateSummary.threshold,
+                          normalColor: const Color(0xFF166B57),
+                          warningColor: const Color(0xFFEF4444),
+                          yLabels: bundle.heartRateSummary.yLabels,
+                          tooltipLabelBuilder: (point) => '${point.label}\nHeart Rate : ${point.value.toStringAsFixed(0)} BPM',
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // --- SpO2 ---
+                        AnalyticsChartCard(
+                          title: 'Blood Oxygen (SpO2)',
+                          subtitle: 'Avg: ${bundle.spo2Summary.avg}%',
+                          points: bundle.spo2,
+                          yMin: bundle.spo2Summary.yMin,
+                          yMax: bundle.spo2Summary.yMax,
+                          threshold: bundle.spo2Summary.threshold,
+                          normalColor: const Color(0xFF166B57),
+                          warningColor: const Color(0xFFEF4444),
+                          yLabels: bundle.spo2Summary.yLabels,
+                          tooltipLabelBuilder: (point) => '${point.label}\nSpO2 : ${point.value.toStringAsFixed(1)}%',
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // --- Temperature ---
+                        AnalyticsChartCard(
+                          title: 'Body Temperature',
+                          subtitle: '°F',
+                          points: bundle.temperature,
+                          yMin: bundle.temperatureSummary.yMin,
+                          yMax: bundle.temperatureSummary.yMax,
+                          threshold: bundle.temperatureSummary.threshold,
+                          normalColor: const Color(0xFFFF6F31),
+                          warningColor: const Color(0xFFEF4444),
+                          yLabels: bundle.temperatureSummary.yLabels,
+                          tooltipLabelBuilder: (point) => '${point.label}\nTemperature : ${point.value.toStringAsFixed(1)}°F',
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // --- Head Acceleration ---
+                        AnalyticsChartCard(
+                          title: 'Head Acceleration Events',
+                          subtitle: 'Max Impact: ${bundle.headAccelerationSummary.max}g',
+                          points: bundle.headAcceleration,
+                          yMin: bundle.headAccelerationSummary.yMin,
+                          yMax: bundle.headAccelerationSummary.yMax,
+                          threshold: bundle.headAccelerationSummary.threshold,
+                          normalColor: const Color(0xFFF9A826),
+                          warningColor: const Color(0xFFEF4444),
+                          yLabels: bundle.headAccelerationSummary.yLabels,
+                          badgeText: bundle.headAccelerationSummary.badgeText,
+                          tooltipLabelBuilder: (point) => '${point.label}\nImpact : ${point.value.toStringAsFixed(1)}g',
+                        ),
+
+                        const SizedBox(height: 22),
+
+                        // --- Bite Force ---
+                        AnalyticsChartCard(
+                          title: 'Bite Force',
+                          subtitle: 'Newtons (N)',
+                          points: bundle.biteForce,
+                          yMin: bundle.biteForceSummary.yMin,
+                          yMax: bundle.biteForceSummary.yMax,
+                          threshold: bundle.biteForceSummary.threshold,
+                          normalColor: const Color(0xFF166B57),
+                          warningColor: const Color(0xFFEF4444),
+                          yLabels: bundle.biteForceSummary.yLabels,
+                          tooltipLabelBuilder: (point) => '${point.label}\nBite Force : ${point.value.toStringAsFixed(1)} N',
+                        ),
+                      ],
                     ),
-
-                    const SizedBox(height: 22),
-
-                    AnalyticsChartCard(
-                      title: 'Blood Oxygen (SpO2)',
-                      subtitle: 'Avg: ${bundle.spo2Summary.avg}%',
-                      points: bundle.spo2,
-                      yMin: bundle.spo2Summary.yMin,
-                      yMax: bundle.spo2Summary.yMax,
-                      threshold: bundle.spo2Summary.threshold,
-                      normalColor: const Color(0xFF166B57),
-                      warningColor: const Color(0xFFEF4444),
-                      yLabels: bundle.spo2Summary.yLabels,
-                      iconBg: const Color(0xFFE5ECE8),
-                      iconColor: const Color(0xFF166B57),
-                      tooltipLabelBuilder: (point) => '${point.label}\nSpO2 : ${point.value.toStringAsFixed(1)}%',
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    AnalyticsChartCard(
-                      title: 'Body Temperature',
-                      subtitle: '°F',
-                      points: bundle.temperature,
-                      yMin: bundle.temperatureSummary.yMin,
-                      yMax: bundle.temperatureSummary.yMax,
-                      threshold: bundle.temperatureSummary.threshold,
-                      normalColor: const Color(0xFFFF6F31),
-                      warningColor: const Color(0xFFEF4444),
-                      yLabels: bundle.temperatureSummary.yLabels,
-                      iconBg: const Color(0xFFF9E9E2),
-                      iconColor: const Color(0xFFFF6F31),
-                      tooltipLabelBuilder: (point) => '${point.label}\nTemperature : ${point.value.toStringAsFixed(1)}°F',
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    AnalyticsChartCard(
-                      title: 'Head Acceleration Events',
-                      subtitle: 'Max Impact: ${bundle.headAccelerationSummary.max}g',
-                      points: bundle.headAcceleration,
-                      yMin: bundle.headAccelerationSummary.yMin,
-                      yMax: bundle.headAccelerationSummary.yMax,
-                      threshold: bundle.headAccelerationSummary.threshold,
-                      normalColor: const Color(0xFFF9A826),
-                      warningColor: const Color(0xFFEF4444),
-                      yLabels: bundle.headAccelerationSummary.yLabels,
-                      badgeText: bundle.headAccelerationSummary.badgeText,
-                      tooltipLabelBuilder: (point) => '${point.label}\nImpact : ${point.value.toStringAsFixed(1)}g',
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    AnalyticsChartCard(
-                      title: 'Bite Force',
-                      subtitle: 'Newtons (N)',
-                      points: bundle.biteForce,
-                      yMin: bundle.biteForceSummary.yMin,
-                      yMax: bundle.biteForceSummary.yMax,
-                      threshold: bundle.biteForceSummary.threshold,
-                      normalColor: const Color(0xFF166B57),
-                      warningColor: const Color(0xFFEF4444),
-                      yLabels: bundle.biteForceSummary.yLabels,
-                      iconBg: const Color(0xFFE5ECE8),
-                      iconColor: const Color(0xFF166B57),
-                      tooltipLabelBuilder: (point) => '${point.label}\nBite Force : ${point.value.toStringAsFixed(1)} N',
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
       bottomNavigationBar: _buildBottomNav(),
     );
   }
 
+  // --- Private Header Builder ---
   Widget _buildHeader(int currentAlertCount) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         GestureDetector(
-          onTap: () => Navigator.pop(context), // Standard safe back navigation
+          onTap: () => Navigator.pop(context),
           child: Container(
-            width: 54,
-            height: 54,
+            width: 54, height: 54,
             decoration: const BoxDecoration(color: Color(0xFFD9D4C8), shape: BoxShape.circle),
             child: const Icon(Icons.arrow_back, color: Color(0xFF555555)),
           ),
@@ -157,18 +170,15 @@ class _TrainerAnalyticsPageState extends State<TrainerAnalyticsPage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(color: const Color(0xFFFCE9EC), borderRadius: BorderRadius.circular(16)),
-          child: Text(
-            '$currentAlertCount Alerts',
-            style: const TextStyle(color: Color(0xFFEF4444), fontSize: 15, fontWeight: FontWeight.w700),
-          ),
+          child: Text('$currentAlertCount Alerts', style: const TextStyle(color: Color(0xFFEF4444), fontSize: 15, fontWeight: FontWeight.w700)),
         ),
       ],
     );
   }
 
+  // --- Range Tabs Builder ---
   Widget _buildRangeTabs() {
     final tabs = ['30min', '1hr', '3hr', '24hr'];
-
     return Row(
       children: tabs.map((tab) {
         final selected = _selectedRange == tab;
@@ -183,10 +193,9 @@ class _TrainerAnalyticsPageState extends State<TrainerAnalyticsPage> {
                   color: selected ? const Color(0xFF166B57) : Colors.white,
                   borderRadius: BorderRadius.circular(18),
                   border: Border.all(color: const Color(0xFFD9D6CD)),
-                  boxShadow: selected ? null : const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 2))],
                 ),
                 child: Center(
-                  child: Text(tab, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: selected ? Colors.white : const Color(0xFF555555))),
+                  child: Text(tab, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: selected ? Colors.white : Colors.grey)),
                 ),
               ),
             ),
@@ -196,6 +205,7 @@ class _TrainerAnalyticsPageState extends State<TrainerAnalyticsPage> {
     );
   }
 
+  // --- Bottom Navigation ---
   Widget _buildBottomNav() {
     return SafeArea(
       top: false,
@@ -213,6 +223,9 @@ class _TrainerAnalyticsPageState extends State<TrainerAnalyticsPage> {
     );
   }
 }
+
+// --- Component Classes (AnalyticsChartCard, _InteractiveBarChart, etc.) should remain as they were in your previous file ---
+// Please ensure you append those classes to the end of this file.
 
 // --- ORIGINAL COMPONENT CLASSES PRESERVED ---
 

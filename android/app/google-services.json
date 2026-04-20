@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "921377337429",
+    "project_id": "guardsync-552a1",
+    "storage_bucket": "guardsync-552a1.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:921377337429:android:69f18439548d1fa66ca4dc",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCrQIfG7OuVVgiGL6yjLUtshVhUqKNnehg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

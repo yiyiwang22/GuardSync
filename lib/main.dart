@@ -16,7 +16,14 @@ import 'pages/parent/parent_dashboard_page.dart';
 import 'pages/athlete_connection_page.dart';
 import 'pages/connection_requests_page.dart';
 
-void main() {
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const GuardSyncApp());
 }
 
